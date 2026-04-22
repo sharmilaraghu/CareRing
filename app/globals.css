@@ -212,12 +212,34 @@ body::before {
 }
 
 @media (max-width: 767px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  .desktop-layout {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   .phone-frame {
     width: 100%;
-    min-height: 100dvh;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   .phone-frame::before {
     display: none;
+  }
+  .phone-inner {
+    flex: 1;
+    min-height: 0;
   }
 }
 

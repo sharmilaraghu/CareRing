@@ -13,7 +13,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-full flex flex-col" style={{ background: "var(--cream)" }}>
+    <div className="h-full flex flex-col" style={{ background: "var(--cream)" }}>
 
       {/* ── Logo bar ── */}
       <div className="flex items-center justify-center gap-2 py-4 px-5 shrink-0">
