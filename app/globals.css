@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+:root {
+  /* ── Vintage 90s Warm Home Palette ── */
+  --cream:        #F4E9D0;
+  --cream-light:  #FBF5E8;
+  --cream-dark:   #E8D9B8;
+  --terracotta:   #C4674A;
+  --terra-dark:   #A85239;
+  --terra-light:  #D4896E;
+  --sage:         #6B9B7A;
+  --sage-light:   #89B896;
+  --amber:        #D4A574;
+  --amber-light:  #E8C49A;
+  --dusty-rose:   #C9847A;
+  --brown:        #2C1810;
+  --brown-mid:    #5C3D2E;
+  --brown-light:  #8C6B5A;
+  --card-bg:      #FFFDF5;
+  --card-border:  #D4C4A8;
+
+  --background: var(--cream);
+  --foreground: var(--brown);
+
+  --font-serif:  'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-mono:   'Courier New', Courier, monospace;
+  --font-sans:   'Nunito', system-ui, sans-serif;
+
+  --shadow-card:   4px 6px 0px #C4B8A0;
+  --shadow-button: 3px 4px 0px #A85239;
+  --shadow-sage:   3px 4px 0px #4A7A58;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  color: var(--brown);
+  background: var(--cream);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+/* ── Paper grain texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' x='0' y='0' fill='%23C4A87A' opacity='0.08'/%3E%3Crect width='1' height='1' x='2' y='2' fill='%23C4A87A' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--cream-dark); }
+::-webkit-scrollbar-thumb { background: var(--terracotta); border-radius: 2px; }
+
+/* ── Selection ── */
+::selection { background: var(--terracotta); color: white; }
+
+/* ── Focus ── */
+:focus-visible {
+  outline: 2px solid var(--terracotta);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Vintage card style ── */
+.card-vintage {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Chunky button ── */
+.btn-terra {
+  background: var(--terracotta);
+  color: white;
+  border: 2px solid var(--terra-dark);
+  border-radius: 999px;
+  box-shadow: var(--shadow-button);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-terra:active {
+  transform: translate(3px, 4px);
+  box-shadow: none;
+}
+
+.btn-sage {
+  background: var(--sage);
+  color: white;
+  border: 2px solid #4A7A58;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sage);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-sage:active {
+  transform: translate(3px, 4px);
+  box-shadow: none;
+}
+
+/* ── Monospace label (retro readout) ── */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brown-light);
+}
+
+/* ── Dot-grid background ── */
+.dot-grid {
+  background-image: radial-gradient(circle, #C4A87A33 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  50%       { transform: rotate(2deg); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-fade-up   { animation: fadeUp 0.5s ease both; }
+.animate-fade-in   { animation: fadeIn 0.4s ease both; }
+.animate-wave-bar  { animation: waveBar 0.8s ease-in-out infinite; }
+.animate-pulse-ring { animation: pulseRing 1.5s ease-out infinite; }
+.animate-wiggle    { animation: wiggle 1s ease-in-out infinite; }
+
+/* ── Phone frame with description panel (desktop preview) ── */
+@media (min-width: 768px) {
+  body {
+    background: #3D2B1A;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='1' height='1' x='0' y='0' fill='%23C4A87A' opacity='0.07'/%3E%3C/svg%3E");
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 100vh;
+    padding: 0;
+  }
+  .desktop-layout {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+  }
+  .description-panel {
+    width: 400px;
+    padding: 40px 40px;
+    color: #F5E6D3;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .description-panel > div {
+    max-width: 320px;
+  }
+  .phone-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 0;
+    padding-right: 200px;
+  }
+  .phone-frame {
+    border: 10px solid #1C1008;
+    border-radius: 44px;
+    box-shadow:
+      0 32px 80px rgba(0,0,0,0.5),
+      inset 0 0 0 2px #5C3D2E;
+    overflow: hidden;
+    width: 390px;
+    height: calc(100vh - 40px);
+    max-height: 844px;
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .phone-frame {
+    width: 100%;
+    min-height: 100dvh;
+  }
+  .phone-frame::before {
+    display: none;
+  }
+}
+
+.phone-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  .phone-inner { padding-top: 28px; }
+}
+
+/* ── Alert level badges ── */
+.badge-high   { background: #FDECEA; color: #C1292E; border: 1.5px solid #C1292E40; }
+.badge-medium { background: #FEF3DC; color: #9A6B00; border: 1.5px solid #D4A57440; }
+.badge-low    { background: #EDF4EF; color: #4A7A58; border: 1.5px solid #6B9B7A40; }
