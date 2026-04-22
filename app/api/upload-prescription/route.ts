@@ -86,14 +86,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Batch insert new medicines
-    let medicinesData = [];
     if (medicinesToUpsert.length > 0) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('medicines')
         .insert(medicinesToUpsert)
         .select();
       if (error) throw error;
-      medicinesData = data;
     }
 
     // Fetch all current medicines for response

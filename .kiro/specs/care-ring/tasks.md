@@ -197,9 +197,42 @@ CareRing is a voice-first emotional care companion built with Next.js 15 App Rou
     - Badge styles for severity levels
     - Responsive layout for desktop description panel
 
+- [x] 10. Contextual Voice Agent with Client Tools
+  - [x] 10.1 Implement ElderContext builder (`lib/elderContext.ts`)
+    - `buildElderContext(summary)` builds context from PatientSummary
+    - Computes medicine statuses (taken/missed/due/upcoming) from logs + current time
+    - Generates system prompt context block with elder name, medicines, symptoms, mood
+    - Generates personalized first message (greets by name, asks about due/missed meds)
+    - _Requirements: 14.1, 14.2, 14.3_
+
+  - [x] 10.2 Update VoiceInterface to support client tools and overrides
+    - Added `clientTools` and `overrides` props to `useVoiceInterface`
+    - Passes `clientTools` map to `startSession` for mid-conversation tool calls
+    - Passes `overrides.agent.prompt` and `overrides.agent.firstMessage` for context injection
+    - _Requirements: 14.4, 14.9_
+
+  - [x] 10.3 Update TalkButton to pass through client tools and overrides
+    - Added `clientTools` and `overrides` props, forwarded to `useVoiceInterface`
+    - _Requirements: 14.4_
+
+  - [x] 10.4 Wire client tools in Elder Dashboard
+    - `getMedicationSchedule` — fetches medicines with real-time status via `/api/patient-summary`
+    - `getRecentSymptoms` — fetches last 5 symptoms via `/api/patient-summary`
+    - `getEmotionalHistory` — fetches latest mood via `/api/patient-summary`
+    - `logMedicationStatus` — POSTs to `/api/medication-log`, refreshes dashboard
+    - All tools built with `useMemo` for stable references
+    - _Requirements: 14.5, 14.6, 14.7, 14.8_
+
+  - [x] 10.5 Configure ElevenLabs agent dashboard
+    - Added 4 client tools in ElevenLabs dashboard with correct parameter schemas
+    - Updated system prompt with tool usage instructions and conversation flow
+    - Enabled system prompt and first message overrides in Security tab
+    - Enabled Skip turn system tool for natural conversation pacing
+    - _Requirements: 14.4, 14.5, 14.6, 14.7, 14.8_
+
 ## Notes
 
-- All tasks are complete — the app is a functional hackathon MVP
+- All tasks are complete — the app is a functional hackathon MVP with contextual voice agent
 - No authentication implemented — simple role selection on landing page
 - Hardcoded elder ID (`e0000000-0000-0000-0000-000000000001`) for demo
 - Decision engine is a pure function for testability
@@ -207,3 +240,6 @@ CareRing is a voice-first emotional care companion built with Next.js 15 App Rou
 - Polling-based refresh (30s) instead of Supabase realtime subscriptions
 - Browser TTS used for medicine reminders (not ElevenLabs)
 - Testing stack: vitest + fast-check for PBT on decision engine
+- ElevenLabs agent enhanced with 4 client tools for contextual conversations
+- Session overrides inject elder context (medicines, symptoms, mood) at session start
+- `logMedicationStatus` client tool enables voice-driven medication logging that updates the dashboard in real time

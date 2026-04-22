@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       alert_reason: alertResult?.reason ?? null,
     };
 
-    const { data: conversation, error: convError } = await supabase
+    const { error: convError } = await supabase
       .from('conversations')
       .insert(conversationRecord)
       .select()

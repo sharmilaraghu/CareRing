@@ -44,7 +44,7 @@ function DescriptionPanel() {
             </li>
             <li className="flex items-start gap-2">
               <span>💝</span>
-              <span>Share how you're feeling with a simple tap</span>
+              <span>Share how you&apos;re feeling with a simple tap</span>
             </li>
             <li className="flex items-start gap-2">
               <span>🗣️</span>
@@ -70,7 +70,7 @@ function DescriptionPanel() {
             </li>
             <li className="flex items-start gap-2">
               <span>✅</span>
-              <span>Easy acknowledgment when you've seen an alert</span>
+              <span>Easy acknowledgment when you&apos;ve seen an alert</span>
             </li>
           </ul>
         </div>

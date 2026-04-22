@@ -9,12 +9,23 @@ export interface SessionResult {
 
 export type VoiceStatus = "idle" | "micRequested" | "connecting" | "connected" | "disconnected";
 
+export interface ClientToolsMap {
+  [toolName: string]: (params: Record<string, unknown>) => Promise<string | Record<string, unknown>>;
+}
+
+export interface SessionOverrides {
+  systemPromptContext?: string;
+  firstMessage?: string;
+}
+
 interface Props {
   onSessionEnd: (result: SessionResult) => void;
   onError: (err: Error) => void;
+  clientTools?: ClientToolsMap;
+  overrides?: SessionOverrides;
 }
 
-export default function useVoiceInterface({ onSessionEnd, onError }: Props) {
+export default function useVoiceInterface({ onSessionEnd, onError, clientTools, overrides }: Props) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const transcriptRef = useRef<string[]>([]);
 
@@ -50,15 +61,35 @@ export default function useVoiceInterface({ onSessionEnd, onError }: Props) {
       }
       const { signedUrl } = await res.json();
 
-      await conversation.startSession({
+      // Build session config with optional overrides and client tools
+      const sessionConfig: Record<string, unknown> = {
         signedUrl,
         connectionType: "websocket",
-      });
+      };
+
+      // Add client tools if provided
+      if (clientTools && Object.keys(clientTools).length > 0) {
+        sessionConfig.clientTools = clientTools;
+      }
+
+      // Add overrides if provided (system prompt context + first message)
+      if (overrides?.systemPromptContext || overrides?.firstMessage) {
+        sessionConfig.overrides = {
+          agent: {
+            prompt: overrides.systemPromptContext
+              ? { prompt: overrides.systemPromptContext }
+              : undefined,
+            firstMessage: overrides.firstMessage || undefined,
+          },
+        };
+      }
+
+      await conversation.startSession(sessionConfig);
     } catch (err) {
       setStatus("idle");
       onError(err instanceof Error ? err : new Error("Failed to start session"));
     }
-  }, [conversation, onError]);
+  }, [conversation, onError, clientTools, overrides]);
 
   const stop = useCallback(() => {
     conversation.endSession();

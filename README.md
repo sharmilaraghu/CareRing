@@ -5,7 +5,7 @@
 CareRing is a voice-first emotional care companion for elderly parents living alone. It uses ElevenLabs Conversational AI with a warm companion persona ("Rosie") and Google Gemini AI for intelligent health data extraction — turning natural voice conversations into actionable health insights for caretakers.
 
 <!-- Screenshot: Landing page with role selection -->
-![Landing Page](docs/screenshots/landing.png)
+![Landing Page](images/landing.png)
 
 ---
 
@@ -13,16 +13,18 @@ CareRing is a voice-first emotional care companion for elderly parents living al
 
 ### For Elders
 - 🌸 **Talk to Rosie** — Voice-first health check-ins powered by ElevenLabs Conversational AI
+- 🧠 **Context-Aware Conversations** — Rosie knows your medicines, symptoms, and mood before you say a word
+- 💊 **Voice Medication Logging** — Tell Rosie you took your medicine and it's logged automatically via client tools
 - 💊 **Medicine Timeline** — Visual daily schedule with one-tap taken/missed logging
 - 💝 **Mood Tracker** — Quick emoji-based mood check-ins
 - 📋 **Doctor Guidelines** — Prescription advice and follow-up reminders
 - 🔔 **Smart Alerts** — Severity-based notifications from conversation analysis
 
 <!-- Screenshot: Elder dashboard showing medicine timeline and mood tracker -->
-![Elder Dashboard](docs/screenshots/elder-dashboard.png)
+![Elder Dashboard](images/elder-dashboard.png)
 
 <!-- Screenshot: Voice conversation with Rosie active -->
-![Talk to Rosie](docs/screenshots/talk-to-rosie.png)
+![Talk to Rosie](images/elder-talktorosie.png)
 
 ### For Caretakers
 - 📄 **Prescription Upload** — Upload prescription images/PDFs → Gemini Vision OCR auto-populates medicines
@@ -32,18 +34,16 @@ CareRing is a voice-first emotional care companion for elderly parents living al
 - 📊 **Patient Summary** — At-a-glance cards for medicines, mood, symptoms, and alerts
 
 <!-- Screenshot: Caretaker dashboard with prescription card and alerts -->
-![Caretaker Dashboard](docs/screenshots/caretaker-dashboard.png)
-
-<!-- Screenshot: Prescription upload and parsed result -->
-![Prescription Upload](docs/screenshots/prescription-upload.png)
+![Caretaker Dashboard](images/caretaker-dashboard.png)
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-Voice Check-In (ElevenLabs) → Transcript
-  → Gemini 2.5 Flash Extraction → Structured Data (medications, symptoms, emotion)
+Elder Context (medicines, symptoms, mood) → Session Override
+  → ElevenLabs Voice Agent (Rosie) ← Client Tools (getMedicationSchedule, logMedicationStatus, ...)
+  → Transcript → Gemini 2.5 Flash Extraction → Structured Data
   → Decision Engine (pure function) → Alerts
   → Supabase Persistence → Dashboard Refresh
 
@@ -57,10 +57,23 @@ Prescription Upload → Gemini Vision OCR → Medicines Auto-populated
 | **Frontend** | Next.js 15 (App Router) + Tailwind CSS v4 |
 | **Backend** | Next.js API Routes |
 | **Database** | Supabase (PostgreSQL) |
-| **Voice AI** | ElevenLabs Conversational AI |
+| **Voice AI** | ElevenLabs Conversational AI + Client Tools |
 | **Data Extraction** | Google Gemini 2.5 Flash |
 | **Prescription OCR** | Google Gemini 2.5 Flash (Vision) |
 | **Testing** | Vitest + fast-check (property-based testing) |
+
+### ElevenLabs Client Tools
+
+Rosie is enhanced with 4 client tools that execute in the browser and give her real-time access to the elder's health data:
+
+| Tool | What it does |
+|------|-------------|
+| `getMedicationSchedule` | Fetches today's medicines with live taken/missed/due status |
+| `getRecentSymptoms` | Retrieves symptoms from past conversations for follow-up |
+| `getEmotionalHistory` | Gets the elder's latest mood for empathetic responses |
+| `logMedicationStatus` | Records taken/missed status when the elder confirms via voice |
+
+At session start, the elder's full context (medicines, symptoms, mood, name) is injected via system prompt and first message overrides — so Rosie greets by name and asks about specific due medicines from the first word.
 
 ### Key Design Decisions
 
@@ -97,6 +110,7 @@ components/
 lib/
 ├── types.ts                    # Domain types
 ├── decisionEngine.ts           # Alert evaluation (pure function)
+├── elderContext.ts              # Elder context builder for voice sessions
 ├── gemini.ts                   # Gemini AI extraction + OCR
 └── supabase/                   # Database clients
 ```
@@ -179,11 +193,13 @@ Tests use **Vitest** with **fast-check** for property-based testing of the decis
 1. **Landing page** → Select "I need care" (elder) or "I give care" (caretaker)
 
 2. **As Caretaker:**
-   - Upload a prescription image/PDF → medicines auto-populate
+   - Upload a prescription image/PDF → medicines auto-populate via Gemini OCR
    - View patient summary, manage medicines, monitor alerts
 
 3. **As Elder:**
-   - Tap "Talk to Rosie" → have a voice conversation about medications, symptoms, feelings
+   - Tap "Talk to Rosie" → Rosie greets you by name and asks about your specific due medicines
+   - Rosie uses client tools to check your medication schedule, recent symptoms, and mood in real time
+   - Tell Rosie "I took my Amlodipine" → she logs it automatically via `logMedicationStatus` → dashboard updates
    - Log mood with emoji taps
    - Mark medicines as taken/missed on the timeline
    - View doctor guidelines and follow-up dates
@@ -192,9 +208,6 @@ Tests use **Vitest** with **fast-check** for property-based testing of the decis
    - Gemini extracts medications, symptoms, and emotion from the transcript
    - Decision engine evaluates and generates alerts if needed
    - Caretaker dashboard updates with new data and alerts
-
-<!-- Screenshot: Full demo flow showing elder conversation → caretaker alert -->
-![Demo Flow](docs/screenshots/demo-flow.png)
 
 ---
 
@@ -214,37 +227,31 @@ Tests use **Vitest** with **fast-check** for property-based testing of the decis
 
 ## 🛠️ Built with Kiro
 
-CareRing was deliberately chosen as a project to build with [Kiro](https://kiro.dev) because of its backend-heavy nature — multiple API routes, AI integrations, a decision engine with formal correctness properties, database schema design, and two distinct user-facing dashboards. This kind of complexity is exactly where Kiro's systematic approach shines.
-
-### Why Kiro for this project
-
-Most AI coding tools work well for straightforward UI tasks, but struggle when a project has deep backend logic, multiple integration points, and correctness requirements that need to hold across the entire system. CareRing has all of that:
-
-- A **pure decision engine** with formal correctness properties (property-based testing with fast-check)
-- **Multiple AI integrations** (ElevenLabs voice, Gemini extraction, Gemini OCR) each with their own error handling and fallback behavior
-- **9 API routes** orchestrating database operations, AI calls, and business logic
-- A **database schema** with 7 tables and cross-table relationships
-- **Two separate dashboards** with different data needs pulling from the same backend
+CareRing was built for a hackathon sponsored by [Kiro](https://kiro.dev) — and it was deliberately chosen as a project that plays to Kiro's strengths. Most AI coding tools handle simple UI tasks fine, but CareRing is backend-heavy: multiple API routes, AI integrations, a pure decision engine with formal correctness properties, database schema design, ElevenLabs client tool integration, and two distinct dashboards. This is where Kiro's systematic, spec-driven approach makes a real difference.
 
 ### How Kiro was used
 
-Kiro guided the entire development lifecycle through its **spec-driven development** workflow:
+Kiro guided the entire development lifecycle:
 
-1. **Requirements** — Kiro helped formalize 13 requirements with precise acceptance criteria, covering voice conversations, data extraction, decision rules, prescription OCR, medicine management, mood tracking, alerts, and both dashboards. Each requirement has clear WHEN/THEN acceptance criteria rather than vague descriptions.
+1. **Spec-Driven Development** — Kiro's requirements → design → tasks workflow formalized 14 requirements with precise acceptance criteria before any code was written. Each requirement has clear WHEN/THEN criteria, not vague descriptions. The design document includes architecture diagrams, TypeScript interfaces, API specs, database schema, and data flow sequences.
 
-2. **Design** — Kiro produced a detailed technical design including architecture diagrams, component interfaces with TypeScript signatures, API route specifications, database schema with an ER diagram, and data flow sequences. The design document served as the single source of truth throughout implementation.
+2. **Correctness Properties & Property-Based Testing** — Kiro helped define formal correctness properties for the decision engine before implementation. Properties like "if any medication has status missed, the alert level must be at least medium" became executable tests with fast-check, providing confidence across all valid inputs — not just a handful of examples.
 
-3. **Correctness Properties** — This is where Kiro's systematic approach really paid off. Before writing any implementation code, Kiro helped define formal correctness properties for the decision engine — things like "if any medication has status missed, the alert level must be at least medium" and "if no triggers are detected, the engine must return null." These properties became executable property-based tests with fast-check, giving confidence that the core business logic is correct across all valid inputs, not just a handful of example cases.
+3. **Steering Files** — Three steering documents (product overview, project structure, tech stack) kept all work aligned as the implementation evolved. When the stack changed (OpenAI → Gemini, simplified schema, added prescription OCR, added client tools), the steering files were updated to reflect reality.
 
-4. **Task Breakdown** — Kiro decomposed the design into 9 task groups with clear dependencies: types first, then pure business logic (decision engine), then AI integration (Gemini), then database schema, then API routes, then UI components. Each task references specific requirements for traceability.
+4. **Hooks** — Kiro hooks were configured to enforce development practices:
+   - **Pre-commit secret scanning** — a hook checks staged changes for API keys, tokens, and credentials before every commit, preventing accidental secret exposure
+   - **Post-tool-use validation** — hooks verify that write operations follow project conventions
 
-5. **Steering Files** — Kiro maintained three steering documents (product overview, project structure, tech stack) that kept all subsequent work aligned with the actual codebase as it evolved. When the implementation diverged from the original plan (switching from OpenAI to Gemini, simplifying the schema, adding prescription OCR), the steering files were updated to reflect reality.
+5. **MCP Integration** — The project uses MCP (Model Context Protocol) servers for enhanced development capabilities:
+   - **Context7** — provides up-to-date documentation for libraries (Next.js, Supabase, ElevenLabs, fast-check) directly in the development context, ensuring code follows current API patterns rather than outdated training data
+   - **Fetch** — enables real-time web access for checking latest ElevenLabs agent tool schemas, Gemini API docs, and Supabase migration patterns
 
 ### The systematic advantage
 
-The spec-driven approach meant that even when rapid iteration changed the implementation significantly from the original plan, there was always a clear record of what was built, why, and how it maps to requirements. The decision engine — the most critical piece of backend logic — has formal correctness guarantees backed by property-based tests, not just "it works for these three examples."
+The spec-driven approach meant that even when rapid hackathon iteration changed the implementation significantly — adding ElevenLabs client tools, switching AI providers, adding prescription OCR — there was always a clear record of what was built, why, and how it maps to requirements. The decision engine has formal correctness guarantees backed by property-based tests. The 14 requirements, 6 correctness properties, and 10 task groups stayed in sync with the code throughout.
 
-For a hackathon project with this much backend complexity, Kiro's structured workflow prevented the kind of architectural drift that typically happens when you're moving fast. The requirements, design, and tasks stayed in sync with the code.
+For a hackathon project with this much backend complexity, Kiro's structured workflow prevented the architectural drift that typically happens when you're moving fast under time pressure.
 
 ---
 

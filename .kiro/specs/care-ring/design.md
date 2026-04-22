@@ -158,7 +158,7 @@ The app follows a clear separation of concerns:
 
 ### 1. VoiceInterface (`components/VoiceInterface.tsx`)
 
-Custom hook wrapping the ElevenLabs `useConversation` hook. Exported as `useVoiceInterface`.
+Custom hook wrapping the ElevenLabs `useConversation` hook. Exported as `useVoiceInterface`. Supports client tools and session overrides for contextual conversations.
 
 ```typescript
 type VoiceStatus = "idle" | "micRequested" | "connecting" | "connected" | "disconnected";
@@ -167,9 +167,20 @@ interface SessionResult {
   transcript: string;
 }
 
+interface ClientToolsMap {
+  [toolName: string]: (params: Record<string, unknown>) => Promise<string | Record<string, unknown>>;
+}
+
+interface SessionOverrides {
+  systemPromptContext?: string;
+  firstMessage?: string;
+}
+
 interface Props {
   onSessionEnd: (result: SessionResult) => void;
   onError: (err: Error) => void;
+  clientTools?: ClientToolsMap;
+  overrides?: SessionOverrides;
 }
 
 // Returns: { status: VoiceStatus, start: () => Promise<void>, stop: () => void }
@@ -180,17 +191,21 @@ function useVoiceInterface(props: Props): { status: VoiceStatus; start: () => Pr
 - Requests mic permission before starting
 - Calls `/api/signed-url` to get a signed URL (keeps API key server-side)
 - Starts session with `connectionType: "websocket"`
+- Passes `clientTools` to `startSession` so the agent can call them mid-conversation
+- Passes `overrides` with system prompt context and first message for personalization
 - Collects transcript turns via `onMessage` callback (labels as "User" or "Companion")
 - On disconnect, compiles full transcript and calls `onSessionEnd`
 - Handles errors gracefully, returning to idle state
 
 ### 2. TalkButton (`components/elder/TalkButton.tsx`)
 
-UI component that wraps `useVoiceInterface` with start/stop button and status labels.
+UI component that wraps `useVoiceInterface` with start/stop button and status labels. Passes through client tools and overrides.
 
 ```typescript
 interface Props {
   onSessionEnd: (transcript: string) => void;
+  clientTools?: ClientToolsMap;
+  overrides?: SessionOverrides;
 }
 ```
 
@@ -341,6 +356,48 @@ Simple role selection with two large buttons:
 - "I give care" → navigates to `/caretaker`
 
 No authentication — direct navigation based on role selection.
+
+### 10. ElderContext Builder (`lib/elderContext.ts`)
+
+Pure function that builds a context object for Rosie's session from the elder's PatientSummary.
+
+```typescript
+interface ElderContext {
+  elderName: string;
+  currentTime: string;
+  greeting: string;
+  medicinesSummary: string;
+  dueMedicines: string;
+  recentSymptomsSummary: string;
+  lastMood: string;
+  lastCheckIn: string;
+  systemPromptContext: string;
+  firstMessage: string;
+}
+
+function buildElderContext(summary: PatientSummary): ElderContext;
+```
+
+**Behavior:**
+- Extracts elder's first name from summary
+- Computes medicine statuses (taken/missed/due/upcoming) based on medication logs and current time
+- Formats recent symptoms and mood for prompt injection
+- Generates a `systemPromptContext` block with all elder data for the agent's system prompt override
+- Generates a personalized `firstMessage` that greets by name and asks about due/missed medicines
+- Used by the Elder Dashboard to build `SessionOverrides` before starting a voice session
+
+### 11. ElevenLabs Agent Client Tools
+
+Four client tools registered with the ElevenLabs agent at session start:
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| `getMedicationSchedule` | Fetch today's medicines with real-time status | None | JSON: medicines array with name, dosage, frequency, times, status |
+| `getRecentSymptoms` | Fetch last 5 symptoms from conversations | None | JSON: symptoms array with name, severity, duration |
+| `getEmotionalHistory` | Fetch latest mood | None | JSON: latestMood, latestMoodTime |
+| `logMedicationStatus` | Record medicine as taken/missed | `medicine_name` (string), `status` (string: "taken"/"missed") | JSON: success confirmation |
+
+All tools are configured as ElevenLabs client tools with `expects_response: true` and `execution_mode: "immediate"`. The `logMedicationStatus` tool has `disable_interruptions: true` to prevent partial writes.
 
 ## Data Models
 

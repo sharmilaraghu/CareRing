@@ -25,7 +25,6 @@ function getStatus(
   time: string,
   statusData: { name: string; status: "taken" | "missed" | "unknown" }[],
   logs: MedicationLog[],
-  allMeds: Medicine[]
 ): "taken" | "missed" | "due" | "upcoming" | "unknown" {
   // First check explicit logs (UI buttons take priority)
   const logEntry = logs.find(
@@ -86,7 +85,7 @@ export default function MedicineTimeline({
     med.times.map((time) => ({
       medicine: med,
       time,
-      status: getStatus(med, time, statusData, medicationLogs, medicines),
+      status: getStatus(med, time, statusData, medicationLogs),
       withFoodLabel: med.with_food ? "🍽️ With food" : "⏰ Empty stomach",
       logStatus: medicationLogs.find(
         (l) => l.medicine_name?.toLowerCase() === med.name.toLowerCase()

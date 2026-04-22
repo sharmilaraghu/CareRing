@@ -199,6 +199,22 @@ This is a 2-day hackathon MVP. The core demo flow is: **Voice Check-In → Gemin
 3. SYMPTOMS SHALL be displayed in reverse chronological order
 4. SEVERITY levels SHALL be color-coded: high (red), medium (amber), low (green)
 
+### Requirement 14: Contextual Voice Agent with Client Tools
+
+**User Story:** As an elderly user, I want Rosie to know my medication schedule, recent symptoms, and mood when we talk, so that the conversation feels personal and she can ask me about specific medicines by name.
+
+#### Acceptance Criteria
+
+1. WHEN a voice session starts, THE system SHALL build an elder context from the PatientSummary containing: elder name, current time, today's medicine schedule with statuses, due/missed medicines, recent symptoms, last mood, and last check-in time
+2. THE system SHALL inject the elder context into the ElevenLabs agent via system prompt override and first message override at session start
+3. THE first message SHALL be personalized — greeting the elder by name and asking about a specific due/missed medicine if one exists
+4. THE Voice_Interface SHALL register four client tools with the ElevenLabs agent: `getMedicationSchedule`, `getRecentSymptoms`, `getEmotionalHistory`, and `logMedicationStatus`
+5. WHEN Rosie calls `getMedicationSchedule`, THE client tool SHALL fetch the elder's current medicines with real-time taken/missed/due/upcoming status and return it to the agent
+6. WHEN Rosie calls `getRecentSymptoms`, THE client tool SHALL fetch the last 5 symptoms from recent conversations and return them to the agent
+7. WHEN Rosie calls `getEmotionalHistory`, THE client tool SHALL fetch the elder's latest mood and return it to the agent
+8. WHEN the elder confirms taking or missing a medicine during conversation, Rosie SHALL call `logMedicationStatus` with the medicine name and status, which SHALL POST to `/api/medication-log` and refresh the dashboard
+9. IF the system prompt override or first message override fails, THE Voice_Interface SHALL fall back to the default agent prompt and first message configured in the ElevenLabs dashboard
+
 ---
 
 ## Correctness Properties
