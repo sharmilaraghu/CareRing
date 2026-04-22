@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback } from "react";
-import useVoiceInterface, { type VoiceStatus } from "@/components/VoiceInterface";
+import useVoiceInterface, {
+  type VoiceStatus,
+  type ClientToolsMap,
+  type SessionOverrides,
+} from "@/components/VoiceInterface";
 
 interface Props {
   onSessionEnd: (transcript: string) => void;
+  clientTools?: ClientToolsMap;
+  overrides?: SessionOverrides;
 }
 
 const STATUS_LABEL: Record<VoiceStatus, string> = {
@@ -15,7 +21,7 @@ const STATUS_LABEL: Record<VoiceStatus, string> = {
   disconnected:   "Finishing up...",
 };
 
-export default function TalkButton({ onSessionEnd }: Props) {
+export default function TalkButton({ onSessionEnd, clientTools, overrides }: Props) {
   const handleEnd = useCallback(
     ({ transcript }: { transcript: string }) => onSessionEnd(transcript),
     [onSessionEnd]
@@ -24,6 +30,8 @@ export default function TalkButton({ onSessionEnd }: Props) {
   const { status, start, stop } = useVoiceInterface({
     onSessionEnd: handleEnd,
     onError: (err) => console.error("Voice error:", err),
+    clientTools,
+    overrides,
   });
 
   const isActive = status === "connected" || status === "connecting";

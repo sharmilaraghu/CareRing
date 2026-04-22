@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { PatientSummary } from "@/lib/types";
+import { buildElderContext } from "@/lib/elderContext";
+import type { ClientToolsMap, SessionOverrides } from "@/components/VoiceInterface";
 import MedicineTimeline from "@/components/elder/MedicineTimeline";
 import MoodTracker from "@/components/elder/MoodTracker";
 import DoctorGuidelines from "@/components/elder/DoctorGuidelines";
@@ -12,6 +14,9 @@ import AlertsBadge from "@/components/elder/AlertsBadge";
 
 type Tab = "dashboard" | "rosie";
 
+// TODO: Replace with auth-based elder ID once auth is implemented
+const ELDER_ID = "e0000000-0000-0000-0000-000000000001";
+
 export default function ElderPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<PatientSummary | null>(null);
@@ -19,9 +24,6 @@ export default function ElderPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [lastAlert, setLastAlert] = useState<{ level: string; reason: string } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
-
-  // TODO: Replace with auth-based elder ID once auth is implemented
-  const ELDER_ID = "e0000000-0000-0000-0000-000000000001";
 
   const fetchSummary = useCallback(async () => {
     const res = await fetch(`/api/patient-summary?elderId=${ELDER_ID}`);
@@ -39,6 +41,108 @@ export default function ElderPage() {
       window.removeEventListener("focus", onFocus);
     };
   }, [fetchSummary]);
+
+  // ── Build client tools for Rosie ──
+  const clientTools: ClientToolsMap = useMemo(() => ({
+    getMedicationSchedule: async () => {
+      try {
+        const res = await fetch(`/api/patient-summary?elderId=${ELDER_ID}`);
+        if (!res.ok) return { error: "Failed to fetch medication schedule" };
+        const data = await res.json();
+
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const todayLogs: Record<string, string> = {};
+        for (const log of data.medicationLogs ?? []) {
+          todayLogs[log.medicine_name?.toLowerCase()] = log.status;
+        }
+
+        const medicines = (data.medicines ?? []).map((med: { name: string; dosage: string; frequency: string; times: string[] }) => {
+          const logStatus = todayLogs[med.name.toLowerCase()];
+          let status = "upcoming";
+          if (logStatus) {
+            status = logStatus;
+          } else if (med.times.length > 0) {
+            const [h, m] = med.times[0].split(":").map(Number);
+            const medMin = h * 60 + m;
+            if (currentMinutes > medMin + 30) status = "missed";
+            else if (currentMinutes >= medMin - 10) status = "due";
+          }
+          return { name: med.name, dosage: med.dosage, frequency: med.frequency, times: med.times, status };
+        });
+
+        return JSON.stringify({ medicines, currentTime: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+      } catch {
+        return JSON.stringify({ error: "Failed to fetch medication data" });
+      }
+    },
+
+    getRecentSymptoms: async () => {
+      try {
+        const res = await fetch(`/api/patient-summary?elderId=${ELDER_ID}`);
+        if (!res.ok) return { error: "Failed to fetch symptoms" };
+        const data = await res.json();
+        const symptoms = (data.recentSymptoms ?? []).slice(0, 5).map((s: { name: string; severity: string; duration: string | null }) => ({
+          name: s.name,
+          severity: s.severity,
+          duration: s.duration ?? "not specified",
+        }));
+        return JSON.stringify({ symptoms, count: symptoms.length });
+      } catch {
+        return JSON.stringify({ error: "Failed to fetch symptoms" });
+      }
+    },
+
+    getEmotionalHistory: async () => {
+      try {
+        const res = await fetch(`/api/patient-summary?elderId=${ELDER_ID}`);
+        if (!res.ok) return { error: "Failed to fetch emotional history" };
+        const data = await res.json();
+        return JSON.stringify({
+          latestMood: data.latestMood?.emotion ?? "unknown",
+          latestMoodTime: data.latestMood?.created_at ?? null,
+        });
+      } catch {
+        return JSON.stringify({ error: "Failed to fetch emotional history" });
+      }
+    },
+
+    logMedicationStatus: async (params: Record<string, unknown>) => {
+      try {
+        const medicineName = params.medicine_name as string;
+        const status = params.status as string;
+        if (!medicineName || !status) {
+          return JSON.stringify({ error: "medicine_name and status are required" });
+        }
+        const res = await fetch("/api/medication-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            elderId: ELDER_ID,
+            medicineName,
+            status: status === "taken" ? "taken" : "missed",
+          }),
+        });
+        if (!res.ok) return JSON.stringify({ error: "Failed to log medication status" });
+        // Refresh the dashboard data
+        fetchSummary();
+        return JSON.stringify({ success: true, medicine: medicineName, status });
+      } catch {
+        return JSON.stringify({ error: "Failed to log medication status" });
+      }
+    },
+  }), [fetchSummary]);
+
+  // ── Build session overrides with elder context ──
+  const sessionOverrides: SessionOverrides | undefined = useMemo(() => {
+    if (!summary) return undefined;
+    const ctx = buildElderContext(summary);
+    return {
+      systemPromptContext: ctx.systemPromptContext,
+      firstMessage: ctx.firstMessage,
+    };
+  }, [summary]);
 
   async function handleSessionEnd(transcript: string) {
     if (!transcript.trim()) return;
@@ -151,14 +255,12 @@ export default function ElderPage() {
         {/* ── Dashboard Tab ── */}
         {activeTab === "dashboard" && (
           <>
-            {/* Alerts Badge */}
             {data.unacknowledgedAlerts.length > 0 && (
               <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
                 <AlertsBadge alerts={data.unacknowledgedAlerts} />
               </div>
             )}
 
-            {/* Mood Tracker */}
             <div className="animate-fade-up" style={{ animationDelay: "20ms" }}>
               <MoodTracker
                 elderId={ELDER_ID}
@@ -167,7 +269,6 @@ export default function ElderPage() {
               />
             </div>
 
-            {/* Medicine Timeline */}
             <div className="animate-fade-up" style={{ animationDelay: "40ms" }}>
               <MedicineTimeline
                 elderId={ELDER_ID}
@@ -178,12 +279,10 @@ export default function ElderPage() {
               />
             </div>
 
-            {/* Doctor Guidelines */}
             <div className="animate-fade-up" style={{ animationDelay: "80ms" }}>
               <DoctorGuidelines prescription={data.prescription} />
             </div>
 
-            {/* Assistant Help */}
             <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
               <AssistantHelp onTalkToRosie={() => setActiveTab("rosie")} />
             </div>
@@ -194,10 +293,13 @@ export default function ElderPage() {
         {activeTab === "rosie" && (
           <>
             <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
-              <TalkButton onSessionEnd={handleSessionEnd} />
+              <TalkButton
+                onSessionEnd={handleSessionEnd}
+                clientTools={clientTools}
+                overrides={sessionOverrides}
+              />
             </div>
 
-            {/* Last conversation summary */}
             {data.latestConversation && (
               <div className="animate-fade-up" style={{ animationDelay: "80ms" }}>
                 <div

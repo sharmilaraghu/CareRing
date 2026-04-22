@@ -47,6 +47,25 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    // Generate alert if medicine was missed (manual tap or voice tool)
+    if (status === 'missed') {
+      await supabase
+        .from('conversations')
+        .insert({
+          elder_id: elderId,
+          transcript: `Medication logged manually: ${medicineName} — missed`,
+          extracted: {
+            medications: [{ name: medicineName, status: 'missed' }],
+            symptoms: [],
+            emotion: 'neutral',
+            source: 'manual_log',
+          },
+          emotion: 'neutral',
+          alert_level: 'medium',
+          alert_reason: `Missed medication: ${medicineName}`,
+        });
+    }
+
     return NextResponse.json({ id: data.id, status: data.status, created_at: data.created_at });
   } catch (err) {
     console.error('[POST /api/medication-log]', err);
