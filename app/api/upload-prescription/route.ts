@@ -20,8 +20,28 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64');
     const mimeType = file.type || 'application/pdf';
 
+    const supabase = createServerSupabaseClient();
+
     // Gemini vision handles both PDF and images natively via inlineData
-    const prescription = await parsePrescription(base64, mimeType);
+    // Fetch meal schedule for personalized medicine timing
+    let mealTimes = { breakfast: '08:00', lunch: '13:00', dinner: '20:00', bedtime: '22:00' };
+    try {
+      const { data: mealData } = await supabase
+        .from('meal_schedules')
+        .select('*')
+        .eq('elder_id', elderId)
+        .single();
+      if (mealData) {
+        mealTimes = {
+          breakfast: mealData.breakfast || '08:00',
+          lunch: mealData.lunch || '13:00',
+          dinner: mealData.dinner || '20:00',
+          bedtime: mealData.bedtime || '22:00',
+        };
+      }
+    } catch { /* use defaults */ }
+
+    const prescription = await parsePrescription(base64, mimeType, mealTimes);
 
     const supabase = createServerSupabaseClient();
 

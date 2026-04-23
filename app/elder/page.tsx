@@ -10,7 +10,6 @@ import MoodTracker from "@/components/elder/MoodTracker";
 import DoctorGuidelines from "@/components/elder/DoctorGuidelines";
 import AssistantHelp from "@/components/elder/AssistantHelp";
 import TalkButton from "@/components/elder/TalkButton";
-import AlertsBadge from "@/components/elder/AlertsBadge";
 
 type Tab = "dashboard" | "rosie";
 
@@ -22,7 +21,7 @@ export default function ElderPage() {
   const [summary, setSummary] = useState<PatientSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
-  const [lastAlert, setLastAlert] = useState<{ level: string; reason: string } | null>(null);
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   const fetchSummary = useCallback(async () => {
@@ -146,7 +145,7 @@ export default function ElderPage() {
 
   async function handleSessionEnd(transcript: string) {
     if (!transcript.trim()) return;
-    setLastAlert(null);
+    setSessionMessage(null);
     setAnalyzing(true);
     try {
       const res = await fetch("/api/analyze-conversation", {
@@ -154,11 +153,18 @@ export default function ElderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript, elderId: ELDER_ID }),
       });
-      const data = await res.json();
-      if (data.alert) setLastAlert(data.alert);
+      if (!res.ok) throw new Error("Analysis failed");
+      // Show a gentle confirmation to the elder (no alert details)
+      setSessionMessage("Thanks for chatting! Rosie has noted everything down. 🌸");
+      // Play a TTS confirmation
+      try {
+        const { playTTSReminder } = await import("@/lib/ttsReminder");
+        await playTTSReminder("Thanks for chatting! I've noted everything down. Take care!");
+      } catch { /* TTS is best-effort */ }
       await fetchSummary();
     } catch (err) {
       console.error("Failed to analyze conversation:", err);
+      setSessionMessage("Check-in saved. Take care! 🌸");
     } finally {
       setAnalyzing(false);
     }
@@ -206,12 +212,34 @@ export default function ElderPage() {
             )}
             <p className="mono-label mt-0.5">{todayLabel()}</p>
           </div>
-          <button
-            onClick={() => router.push("/")}
-            className="mono-label px-3 py-1.5 rounded-full border-2 border-[var(--card-border)] bg-[var(--cream)] text-[var(--brown-light)] whitespace-nowrap"
-          >
-            ← Home
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="tel:911"
+              onClick={async () => {
+                // Fire alert to caretaker
+                try {
+                  await fetch("/api/analyze-conversation", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      transcript: "SOS triggered by elder — emergency assistance requested.",
+                      elderId: ELDER_ID,
+                    }),
+                  });
+                } catch { /* best-effort */ }
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-white text-xs font-bold whitespace-nowrap"
+              style={{ background: "#C1292E", border: "2px solid #A01F23" }}
+            >
+              🚨 SOS
+            </a>
+            <button
+              onClick={() => router.push("/")}
+              className="mono-label px-3 py-1.5 rounded-full border-2 border-[var(--card-border)] bg-[var(--cream)] text-[var(--brown-light)] whitespace-nowrap"
+            >
+              ← Home
+            </button>
+          </div>
         </div>
       </div>
 
@@ -231,22 +259,16 @@ export default function ElderPage() {
           </div>
         )}
 
-        {/* Alert toast */}
-        {lastAlert && !analyzing && (
+        {/* Session confirmation */}
+        {sessionMessage && !analyzing && (
           <div
             className="rounded-xl px-4 py-3 border-2 flex items-center gap-3 animate-fade-in cursor-pointer"
-            style={{
-              background: lastAlert.level === "high" ? "#FDECEA" : lastAlert.level === "medium" ? "#FEF3DC" : "#EDF4EF",
-              borderColor: lastAlert.level === "high" ? "#C1292E40" : lastAlert.level === "medium" ? "#D4A57440" : "#6B9B7A40",
-            }}
-            onClick={() => setLastAlert(null)}
+            style={{ background: "#EDF4EF", borderColor: "#6B9B7A40" }}
+            onClick={() => setSessionMessage(null)}
           >
-            <span className="text-xl">
-              {lastAlert.level === "high" ? "🚨" : lastAlert.level === "medium" ? "⚠️" : "ℹ️"}
-            </span>
+            <span className="text-xl">🌸</span>
             <div className="flex-1 min-w-0">
-              <p className="mono-label">New Alert · {lastAlert.level.toUpperCase()}</p>
-              <p className="text-sm font-semibold text-[var(--brown)] truncate">{lastAlert.reason}</p>
+              <p className="text-sm font-semibold text-[var(--brown)]">{sessionMessage}</p>
             </div>
             <span className="mono-label">tap to dismiss</span>
           </div>
@@ -255,12 +277,6 @@ export default function ElderPage() {
         {/* ── Dashboard Tab ── */}
         {activeTab === "dashboard" && (
           <>
-            {data.unacknowledgedAlerts.length > 0 && (
-              <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
-                <AlertsBadge alerts={data.unacknowledgedAlerts} />
-              </div>
-            )}
-
             <div className="animate-fade-up" style={{ animationDelay: "20ms" }}>
               <MoodTracker
                 elderId={ELDER_ID}

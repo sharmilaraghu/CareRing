@@ -1,0 +1,13 @@
+{
+  "name": "Test Decision Engine on Change",
+  "version": "1.0.0",
+  "description": "Runs property-based tests when the decision engine or its tests are modified to ensure correctness properties still hold.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["lib/decisionEngine.ts", "lib/__tests__/*.test.ts"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npx vitest --run lib/__tests__/"
+  }
+}

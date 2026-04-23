@@ -1,0 +1,13 @@
+{
+  "name": "Validate API Route Changes",
+  "version": "1.0.0",
+  "description": "When an API route is modified, reminds the agent to verify error handling, input validation, and that the route returns proper HTTP status codes.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["app/api/**/*.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An API route was just modified. Verify that: 1) All required parameters are validated with proper 400 responses, 2) Database errors are caught with 500 responses, 3) The Supabase client is created via createServerSupabaseClient(), 4) No secrets or API keys are hardcoded. If any issues are found, fix them."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Lint TypeScript on Save",
+  "version": "1.0.0",
+  "description": "Runs ESLint on saved TypeScript files to catch errors before they reach the build.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["*.ts", "*.tsx"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npx next lint --file"
+  }
+}
