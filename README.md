@@ -18,25 +18,31 @@ CareRing is a voice-first care companion for elderly parents living alone. Rosie
 - 🌸 **Talk to Rosie** — natural voice check-ins via ElevenLabs Conversational AI
 - 🧠 **Context-aware** — Rosie knows your medicines, symptoms, and mood before you say a word
 - 💊 **Voice medication logging** — "I took my Amlodipine" → logged automatically via client tools
-- 🔊 **ElevenLabs TTS reminders** — missed medicine reminders in a warm voice (or your family's cloned voice)
+- 🔊 **ElevenLabs TTS reminders** — missed medicine reminders in a warm voice (or your family's cloned voice), with smart dosage pronunciation
 - 💝 **One-tap mood tracking** — emoji-based, no typing needed
 - 🚨 **SOS Emergency** — one-tap emergency call + instant caretaker alert
 
 <p align="center">
-  <img src="images/elderdash.png" alt="Elder Dashboard" width="300" />
+  <img src="images/elderdash1.png" alt="Elder Dashboard" width="300" />
   &nbsp;&nbsp;
   <img src="images/elder-talktorosie.png" alt="Talk to Rosie" width="300" />
 </p>
 
 ### For Caretakers
 - 📄 **Prescription OCR** — upload a photo → Gemini Vision extracts medicines automatically
+- 🕐 **Personalized meal schedule** — set the elder's breakfast, lunch, dinner, and bedtime → medicine times adjust automatically
 - 🎙️ **Voice cloning** — clone your voice so medicine reminders sound like you, not a robot
 - 🔔 **Real-time alerts** — missed meds, high-severity symptoms, emotional distress, SOS triggers
 - 📊 **Patient summary** — medicines, mood, symptoms, alerts at a glance
 - 🌡️ **Symptom history** — track patterns with severity indicators
 
 <p align="center">
-  <img src="images/caretaker-dashboard.png" alt="Caretaker Dashboard" width="300" />
+  <img src="images/caretaker-dash.png" alt="Caretaker Dashboard" width="300" />
+  &nbsp;&nbsp;
+  <img src="images/caretaker-medicine.png" alt="Caretaker Medicines & Meal Schedule" width="300" />
+</p>
+<p align="center">
+  <img src="images/caretakervc.png" alt="Caretaker Voice Cloning" width="300" />
 </p>
 
 ---
@@ -67,7 +73,11 @@ At session start, the elder's full context is injected via **system prompt and f
 
 Caretakers can **clone their voice** using ElevenLabs Instant Voice Cloning — upload a 30-second audio sample, and all medicine reminders will sound like them instead of a default AI voice. The elder hears their daughter or son reminding them to take their medicine, even from thousands of miles away.
 
-Medicine reminders use **ElevenLabs TTS** (`eleven_flash_v2_5` model) with automatic fallback to browser speech synthesis if the API is unavailable.
+Medicine reminders use **ElevenLabs TTS** (`eleven_flash_v2_5` model) with smart dosage normalization — "500mg" is spoken as "500 milligrams", not "500 m g". Automatic fallback to browser speech synthesis if the API is unavailable.
+
+### Personalized Meal Schedule
+
+Caretakers set the elder's actual meal times (breakfast, lunch, dinner, bedtime) — and when a prescription is uploaded, Gemini maps instructions like "after breakfast" or "at bedtime" to the elder's real schedule instead of hardcoded defaults. Margaret eats breakfast at 7 AM? Her morning medicine shows at 7:00, not 8:00.
 
 ### SOS Emergency
 
@@ -78,7 +88,7 @@ A persistent red SOS button on the elder dashboard. One tap → confirmation →
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js 15 (App Router) + Tailwind CSS v4 |
-| Backend | Next.js API Routes (9 endpoints) |
+| Backend | Next.js API Routes (12 endpoints) |
 | Database | Supabase (PostgreSQL) |
 | Voice AI | **ElevenLabs** Conversational AI + Client Tools + TTS + Voice Cloning |
 | Extraction | Google Gemini 2.5 Flash |
@@ -89,14 +99,15 @@ A persistent red SOS button on the elder dashboard. One tap → confirmation →
 
 ## 📱 Demo Flow
 
-1. **Caretaker** uploads a prescription photo → Gemini OCR extracts medicines automatically
-2. **Caretaker** clones their voice → medicine reminders now sound like them
-3. **Elder** taps "Talk to Rosie" → Rosie greets by name, asks about specific due medicines
-4. Elder says "I took my blood pressure pill" → Rosie calls `logMedicationStatus` → dashboard updates
-5. Elder mentions knee pain → Gemini extracts symptom → decision engine fires alert
-6. Missed medicine → ElevenLabs TTS reminder plays in the caretaker's cloned voice
-7. **Caretaker** sees alerts instantly, acknowledges them
-8. **Elder** taps SOS → phone dialer opens + caretaker gets critical alert
+1. **Caretaker** sets the elder's meal times (breakfast 7:00, lunch 12:30, dinner 19:00, bedtime 21:30)
+2. **Caretaker** uploads a prescription photo → Gemini OCR extracts medicines with personalized times
+3. **Caretaker** clones their voice → medicine reminders now sound like them
+4. **Elder** taps "Talk to Rosie" → Rosie greets by name, asks about specific due medicines
+5. Elder says "I took my blood pressure pill" → Rosie calls `logMedicationStatus` → dashboard updates
+6. Elder mentions knee pain → Gemini extracts symptom → decision engine fires alert
+7. Missed medicine → ElevenLabs TTS reminder plays in the caretaker's cloned voice
+8. **Caretaker** sees alerts instantly, acknowledges them
+9. **Elder** taps SOS → phone dialer opens + caretaker gets critical alert
 
 ---
 
@@ -118,7 +129,7 @@ npm run dev
 
 ## 🛠️ Built with Kiro + ElevenLabs
 
-CareRing was built for the **ElevenLabs x Kiro Hackathon**. The project was deliberately chosen to be backend-heavy — multiple AI integrations, a pure decision engine, 11 API routes, client tool orchestration, voice cloning, TTS reminders — because that's where Kiro's systematic approach and ElevenLabs' voice platform make the biggest difference together.
+CareRing was built for the **ElevenLabs x Kiro Hackathon**. The project was deliberately chosen to be backend-heavy — multiple AI integrations, a pure decision engine, 12 API routes, client tool orchestration, voice cloning, TTS reminders, personalized meal scheduling — because that's where Kiro's systematic approach and ElevenLabs' voice platform make the biggest difference together.
 
 <p align="center">
   <img src="images/image.png" alt="Kiro Spec-Driven Development" width="600" />
