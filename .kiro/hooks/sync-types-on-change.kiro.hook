@@ -1,0 +1,13 @@
+{
+  "name": "Check Type Consistency",
+  "version": "1.0.0",
+  "description": "When lib/types.ts is modified, reminds the agent to verify that all components and API routes using these types are still compatible.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["lib/types.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The core types file (lib/types.ts) was just modified. Run 'npx tsc --noEmit' to check for type errors across the codebase. If any components or API routes have type mismatches, fix them to match the updated types."
+  }
+}

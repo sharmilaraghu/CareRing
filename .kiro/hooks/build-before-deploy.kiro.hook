@@ -1,0 +1,13 @@
+{
+  "name": "Build Check Before Deploy",
+  "version": "1.0.0",
+  "description": "Runs a production build before any Vercel deploy command to catch errors locally first.",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [".*vercel.*"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A Vercel deploy command is about to run. First run 'npm run build' locally to verify the build passes. If the build fails, fix the errors before deploying. If the build passes, proceed with the deploy."
+  }
+}

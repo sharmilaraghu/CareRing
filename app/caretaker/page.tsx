@@ -9,6 +9,8 @@ import PatientSummaryCards from "@/components/caretaker/PatientSummaryCards";
 import MedicineManager from "@/components/caretaker/MedicineManager";
 import AlertsList from "@/components/caretaker/AlertsList";
 import SymptomsHistory from "@/components/caretaker/SymptomsHistory";
+import VoiceCloner from "@/components/caretaker/VoiceCloner";
+import MealSchedule from "@/components/caretaker/MealSchedule";
 
 type Tab = "overview" | "medicines";
 
@@ -174,8 +176,13 @@ export default function CaretakerPage() {
               </div>
             )}
 
-            {/* Prescription uploader */}
+            {/* Meal schedule — set before uploading prescription */}
             <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+              <MealSchedule elderId={ELDER_ID} />
+            </div>
+
+            {/* Prescription uploader */}
+            <div className="animate-fade-up" style={{ animationDelay: "40ms" }}>
               <PrescriptionUploader onUploaded={handleUploaded} elderId={ELDER_ID} />
             </div>
 
@@ -193,6 +200,11 @@ export default function CaretakerPage() {
                 medicines={data.medicines}
                 onChange={fetchSummary}
               />
+            </div>
+
+            {/* Voice cloner */}
+            <div className="animate-fade-up" style={{ animationDelay: "180ms" }}>
+              <VoiceCloner elderId={ELDER_ID} />
             </div>
           </>
         )}

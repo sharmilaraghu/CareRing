@@ -2,25 +2,16 @@
 
 import { useState } from "react";
 import type { Medicine } from "@/lib/types";
+import { playTTSReminder, buildReminderText } from "@/lib/ttsReminder";
 
 export default function SimulateReminderButton({ medicines }: { medicines: Medicine[] }) {
   const [speaking, setSpeaking] = useState(false);
 
-  function speak() {
-    if (!window.speechSynthesis || medicines.length === 0) return;
-    window.speechSynthesis.cancel();
-
-    const medList = medicines.map((m) => `${m.name}, ${m.dosage}`).join(". Next: ");
-    const text = `Good morning! Time for your medicines. Please take: ${medList}. Stay healthy!`;
-
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 0.85;
-    utter.pitch = 1.05;
-    utter.onstart = () => setSpeaking(true);
-    utter.onend = () => setSpeaking(false);
-    utter.onerror = () => setSpeaking(false);
-
-    window.speechSynthesis.speak(utter);
+  async function speak() {
+    if (medicines.length === 0) return;
+    const text = buildReminderText(medicines.map((m) => ({ name: m.name, dosage: m.dosage })));
+    if (!text) return;
+    await playTTSReminder(text, () => setSpeaking(true), () => setSpeaking(false));
   }
 
   return (
@@ -29,7 +20,7 @@ export default function SimulateReminderButton({ medicines }: { medicines: Medic
       disabled={speaking || medicines.length === 0}
       className="btn-sage w-full py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {speaking ? "🔊 Playing reminder..." : "🔔 Simulate Medicine Reminder"}
+      {speaking ? "🔊 Playing reminder..." : "🔔 Medicine Reminder"}
     </button>
   );
 }

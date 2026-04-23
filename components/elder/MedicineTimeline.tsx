@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Medicine, MedicationLog } from "@/lib/types";
+import { playTTSReminder, buildReminderText } from "@/lib/ttsReminder";
 
 interface Props {
   elderId: string;
   medicines: Medicine[];
   medicationLogs: MedicationLog[];
-  // Status from latest conversation's extracted medications
   statusData?: { name: string; status: "taken" | "missed" | "unknown" }[];
   onStatusChange?: () => void;
 }
@@ -57,19 +57,6 @@ function formatTime(time: string): string {
   return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
-function speakMedicineReminder(medicines: Medicine[]) {
-  if (!window.speechSynthesis || medicines.length === 0) return;
-
-  const medList = medicines.map((m) => `${m.name}, ${m.dosage}`).join(". Next: ");
-  const text = `Time for your medicines! Please take: ${medList}. Stay healthy!`;
-
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 0.85;
-  utter.pitch = 1.05;
-  window.speechSynthesis.speak(utter);
-}
-
 export default function MedicineTimeline({
   elderId,
   medicines,
@@ -102,10 +89,15 @@ export default function MedicineTimeline({
       lastSpokeRef.current = missedKey;
       const missedMedicines = missedMeds.map((e) => e.medicine);
       if (missedMedicines.length > 0) {
-        speakMedicineReminder(missedMedicines);
+        // Fire and forget — TTS is best-effort
+        const text = buildReminderText(missedMedicines.map((m) => ({ name: m.name, dosage: m.dosage })));
+        if (text) {
+          playTTSReminder(text).catch((err) => console.warn("TTS reminder failed:", err));
+        }
       }
     }
-  }, [entries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicines.length, medicationLogs.length]);
 
   async function handleMark(med: Medicine, time: string, status: "taken" | "missed") {
     const key = `${med.id}-${time}`;
@@ -220,20 +212,18 @@ export default function MedicineTimeline({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full border"
-                    style={{
-                      background: entry.medicine.with_food ? "#EDF4EF" : "#FEF3DC",
-                      borderColor: entry.medicine.with_food ? "#6B9B7A40" : "#D4A57440",
-                      color: entry.medicine.with_food ? "#4A7A58" : "#9A6B00",
-                    }}
-                  >
-                    {entry.withFoodLabel}
-                  </span>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {entry.medicine.instructions && (
                     <span className="mono-label text-xs text-[var(--brown-light)]">
                       {entry.medicine.instructions}
+                    </span>
+                  )}
+                  {entry.medicine.with_food && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full border shrink-0"
+                      style={{ background: "#EDF4EF", borderColor: "#6B9B7A40", color: "#4A7A58" }}
+                    >
+                      🍽 With food
                     </span>
                   )}
                 </div>
