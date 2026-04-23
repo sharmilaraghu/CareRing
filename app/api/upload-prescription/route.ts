@@ -43,8 +43,6 @@ export async function POST(request: NextRequest) {
 
     const prescription = await parsePrescription(base64, mimeType, mealTimes);
 
-    const supabase = createServerSupabaseClient();
-
     // Insert new prescription (keep old prescriptions for history)
     const { data: presRow, error: presError } = await supabase
       .from('prescriptions')

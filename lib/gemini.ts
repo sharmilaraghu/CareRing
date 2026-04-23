@@ -15,37 +15,6 @@ Return only the JSON, no explanation.
 
 Transcript:`;
 
-const PRESCRIPTION_PROMPT = `You are a medical data extractor. Parse this prescription document and return ONLY valid JSON.
-Return this exact structure:
-{
-  "doctor_name": "Dr. R. Kumar",
-  "doctor_qualification": "MBBS",
-  "clinic_name": "City Health Clinic, Chennai",
-  "patient_name": "Arthur Pemberton",
-  "patient_age": 78,
-  "prescription_date": "2026-04-21",
-  "follow_up_days": 14,
-  "follow_up_date": "2026-05-05",
-  "doctor_advice": "Take all medicines regularly. Maintain a balanced diet.",
-  "medicines": [
-    {
-      "name": "Amlodipine",
-      "dosage": "5mg",
-      "quantity": "1 tablet",
-      "frequency": "once daily",
-      "times": ["08:00"],
-      "instructions": "in the morning",
-      "with_food": false
-    }
-  ]
-}
-Rules:
-- times: infer HH:MM from instructions. morning→"08:00", bedtime→"22:00", after breakfast→"08:30", twice daily→["08:00","20:00"], three times daily→["08:00","14:00","20:00"]
-- with_food: true if instructions mention "after food", "after meal", "after breakfast", "with food"
-- follow_up_date: compute prescription_date + follow_up_days. If no follow-up mentioned, omit both fields (null).
-- prescription_date: ISO 8601 format YYYY-MM-DD
-- Return only valid JSON, no markdown, no explanation.`;
-
 const FALLBACK_EXTRACT: ExtractedData = {
   medications: [],
   symptoms: [],
@@ -94,10 +63,69 @@ export async function extractFromTranscript(transcript: string): Promise<Extract
   }
 }
 
+export interface MealTimes {
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  bedtime: string;
+}
+
+function buildPrescriptionPrompt(mealTimes: MealTimes): string {
+  const b = mealTimes.breakfast;
+  const l = mealTimes.lunch;
+  const d = mealTimes.dinner;
+  const bed = mealTimes.bedtime;
+  // 30 min after meal for "after food" instructions
+  const afterB = addMinutes(b, 30);
+  const afterL = addMinutes(l, 30);
+  const afterD = addMinutes(d, 30);
+
+  return `You are a medical data extractor. Parse this prescription document and return ONLY valid JSON.
+Return this exact structure:
+{
+  "doctor_name": "Dr. R. Kumar",
+  "doctor_qualification": "MBBS",
+  "clinic_name": "City Health Clinic, Chennai",
+  "patient_name": "Arthur Pemberton",
+  "patient_age": 78,
+  "prescription_date": "2026-04-21",
+  "follow_up_days": 14,
+  "follow_up_date": "2026-05-05",
+  "doctor_advice": "Take all medicines regularly. Maintain a balanced diet.",
+  "medicines": [
+    {
+      "name": "Amlodipine",
+      "dosage": "5mg",
+      "quantity": "1 tablet",
+      "frequency": "once daily",
+      "times": ["${b}"],
+      "instructions": "in the morning",
+      "with_food": false
+    }
+  ]
+}
+Rules:
+- times: infer HH:MM from instructions. morning→"${b}", bedtime→"${bed}", after breakfast→"${afterB}", after lunch→"${afterL}", after dinner→"${afterD}", twice daily→["${b}","${d}"], three times daily→["${b}","${l}","${d}"]
+- with_food: true if instructions mention "after food", "after meal", "after breakfast", "with food"
+- follow_up_date: compute prescription_date + follow_up_days. If no follow-up mentioned, omit both fields (null).
+- prescription_date: ISO 8601 format YYYY-MM-DD
+- Return only valid JSON, no markdown, no explanation.`;
+}
+
+function addMinutes(time: string, mins: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const total = h * 60 + m + mins;
+  const newH = Math.floor(total / 60) % 24;
+  const newM = total % 60;
+  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+}
+
 export async function parsePrescription(
   base64Data: string,
-  mimeType: string
+  mimeType: string,
+  mealTimes?: MealTimes
 ): Promise<PrescriptionData> {
+  const meals = mealTimes ?? { breakfast: '08:00', lunch: '13:00', dinner: '20:00', bedtime: '22:00' };
   const fallback: PrescriptionData = {
     doctor_name: 'Unknown',
     patient_name: 'Unknown',
@@ -106,8 +134,9 @@ export async function parsePrescription(
   };
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const prompt = buildPrescriptionPrompt(meals);
     const result = await model.generateContent([
-      PRESCRIPTION_PROMPT,
+      prompt,
       { inlineData: { data: base64Data, mimeType } },
     ]);
     const text = result.response.text();
