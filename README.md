@@ -4,7 +4,7 @@
 
 CareRing is a voice-first care companion for elderly parents living alone. Rosie — powered by **ElevenLabs Conversational AI** — checks in daily, asks about medications by name, follows up on symptoms, and logs everything automatically. Caretakers get real-time alerts and a full health dashboard, even from across the world.
 
-> *"Loneliness makes elderly patients get sicker and stay sicker for longer. Doctors can't medicate their way out of this."* — [The Guardian](https://www.theguardian.com/commentisfree/2025/sep/24/why-do-children-of-elderly-patients-stay-away-loneliness-makes-them-sicker-longer)
+> *When you live thousands of miles from your parents, in a different timezone, the hardest part isn't the distance — it's not knowing. Did they take their medicine? Are they in pain? Are they just saying they're fine? CareRing was built so that no caretaker has to wonder.*
 
 <p align="center">
   <img src="images/landing.png" alt="CareRing Landing Page" width="300" />
