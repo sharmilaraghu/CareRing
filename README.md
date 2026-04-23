@@ -2,7 +2,19 @@
 
 **A caring presence, always within reach.**
 
-CareRing is a voice-first care companion for elderly parents living alone. Rosie — powered by **ElevenLabs Conversational AI** — checks in daily, asks about medications by name, follows up on symptoms, and logs everything automatically. Caretakers get real-time alerts and a full health dashboard, even from across the world.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Conversational_AI-blue?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI3IiB5PSIyIiB3aWR0aD0iMyIgaGVpZ2h0PSIyMCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSIxNCIgeT0iMiIgd2lkdGg9IjMiIGhlaWdodD0iMjAiIGZpbGw9IndoaXRlIi8+PC9zdmc+)](https://elevenlabs.io)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-4285F4?logo=google)](https://aistudio.google.com)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://typescriptlang.org)
+[![Vitest](https://img.shields.io/badge/Vitest-fast--check-6E9F18?logo=vitest)](https://vitest.dev)
+[![Built with Kiro](https://img.shields.io/badge/Built_with-Kiro-purple)](https://kiro.dev)
+
+🔗 **[Try it live → carering.vercel.app](https://carering.vercel.app)**
+
+CareRing is a voice-first care companion for elderly parents living alone. Rosie — powered by **ElevenLabs Conversational AI** — checks in daily, asks about medications by name, follows up on symptoms, and logs everything automatically. Medicine reminders play in a **cloned family voice** using ElevenLabs Instant Voice Cloning — so your parent hears you, not a robot. Caretakers get real-time alerts and a full health dashboard, even from across the world.
 
 > *When you live thousands of miles from your parents, in a different timezone, the hardest part isn't the distance — it's not knowing. Did they take their medicine? Are they in pain? Are they just saying they're fine? CareRing was built so that no caretaker has to wonder.*
 
@@ -49,12 +61,9 @@ CareRing is a voice-first care companion for elderly parents living alone. Rosie
 
 ## 🏗️ How it works
 
-```
-Elder Context (medicines, symptoms, mood) → Session Override
-  → ElevenLabs Voice Agent (Rosie) ← Client Tools
-  → Transcript → Gemini 2.5 Flash → Structured Data
-  → Decision Engine (pure function) → Alerts → Caretaker Dashboard
-```
+<p align="center">
+  <img src="images/flowdiagran.png" alt="CareRing Flow — Talk → Understand → Alert → Notify → Care" width="700" />
+</p>
 
 ### ElevenLabs Integration
 
@@ -97,37 +106,7 @@ A persistent red SOS button on the elder dashboard. One tap → confirmation →
 
 ---
 
-## 📱 Demo Flow
-
-1. **Caretaker** sets the elder's meal times (breakfast 7:00, lunch 12:30, dinner 19:00, bedtime 21:30)
-2. **Caretaker** uploads a prescription photo → Gemini OCR extracts medicines with personalized times
-3. **Caretaker** clones their voice → medicine reminders now sound like them
-4. **Elder** taps "Talk to Rosie" → Rosie greets by name, asks about specific due medicines
-5. Elder says "I took my blood pressure pill" → Rosie calls `logMedicationStatus` → dashboard updates
-6. Elder mentions knee pain → Gemini extracts symptom → decision engine fires alert
-7. Missed medicine → ElevenLabs TTS reminder plays in the caretaker's cloned voice
-8. **Caretaker** sees alerts instantly, acknowledges them
-9. **Elder** taps SOS → phone dialer opens + caretaker gets critical alert
-
----
-
-## 🚀 Getting Started
-
-```bash
-git clone https://github.com/sharmilaraghu/CareRing.git
-cd CareRing
-npm install
-cp .env.local.example .env.local  # Fill in your keys
-npm run dev
-```
-
-**Required env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ELEVENLABS_API_KEY`, `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`, `GEMINI_API_KEY`
-
-**Database:** Run `supabase/migrations/003_final_schema.sql` and `004_medication_logs.sql` in your Supabase SQL editor.
-
----
-
-## 🛠️ Built with Kiro + ElevenLabs
+## ️ Built with Kiro + ElevenLabs
 
 CareRing was built for the **ElevenLabs x Kiro Hackathon**. The project was deliberately chosen to be backend-heavy — multiple AI integrations, a pure decision engine, 12 API routes, client tool orchestration, voice cloning, TTS reminders, personalized meal scheduling — because that's where Kiro's systematic approach and ElevenLabs' voice platform make the biggest difference together.
 
@@ -174,6 +153,37 @@ CareRing used **both modes of Kiro** — spec-driven development for the core ar
 | **Session Overrides** | Elder's medicines, symptoms, and mood injected at session start for personalized conversations |
 | **Text-to-Speech** | `eleven_flash_v2_5` model powers medicine reminders with warm, natural voice |
 | **Instant Voice Cloning** | Caretakers clone their voice so reminders sound like a loved one, not a robot |
+
+---
+
+## 📱 Demo Flow
+
+1. **Caretaker** sets the elder's meal times (breakfast 7:00, lunch 12:30, dinner 19:00, bedtime 21:30)
+2. **Caretaker** uploads a prescription photo → Gemini OCR extracts medicines with personalized times
+3. **Caretaker** clones their voice → medicine reminders now sound like them
+4. **Elder** taps "Talk to Rosie" → Rosie greets by name, asks about specific due medicines
+5. Elder says "I took my blood pressure pill" → Rosie calls `logMedicationStatus` → dashboard updates
+6. Elder mentions knee pain → Gemini extracts symptom → decision engine fires alert
+7. Missed medicine → ElevenLabs TTS reminder plays in the caretaker's cloned voice
+8. **Caretaker** sees alerts instantly, acknowledges them
+9. **Elder** taps SOS → phone dialer opens + caretaker gets critical alert
+
+---
+
+<details>
+<summary><strong>🚀 Run it locally</strong></summary>
+
+```bash
+git clone https://github.com/sharmilaraghu/CareRing.git
+cd CareRing
+npm install
+cp .env.local.example .env.local  # Fill in your keys
+npm run dev
+```
+
+**Required env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ELEVENLABS_API_KEY`, `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`, `GEMINI_API_KEY`
+
+</details>
 
 ---
 
