@@ -115,12 +115,32 @@ export default function VoiceCloner({ elderId }: Props) {
       )}
 
       {status === "ready" && (
-        <button
-          onClick={() => { setStatus("idle"); setHasClone(false); }}
-          className="mt-3 mono-label text-xs text-[var(--terracotta)] underline"
-        >
-          Upload a different voice
-        </button>
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => { setStatus("idle"); setHasClone(false); }}
+            className="mono-label text-xs text-[var(--terracotta)] underline"
+          >
+            Upload a different voice
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await fetch("/api/voice-clone", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ elderId }),
+                });
+                setStatus("idle");
+                setHasClone(false);
+              } catch {
+                setError("Failed to delete voice");
+              }
+            }}
+            className="mono-label text-xs text-red-600 underline"
+          >
+            Delete cloned voice
+          </button>
+        </div>
       )}
     </div>
   );
