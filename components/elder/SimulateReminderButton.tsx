@@ -4,14 +4,14 @@ import { useState } from "react";
 import type { Medicine } from "@/lib/types";
 import { playTTSReminder, buildReminderText } from "@/lib/ttsReminder";
 
-export default function SimulateReminderButton({ medicines }: { medicines: Medicine[] }) {
+export default function SimulateReminderButton({ medicines, elderId }: { medicines: Medicine[]; elderId?: string }) {
   const [speaking, setSpeaking] = useState(false);
 
   async function speak() {
     if (medicines.length === 0) return;
     const text = buildReminderText(medicines.map((m) => ({ name: m.name, dosage: m.dosage })));
     if (!text) return;
-    await playTTSReminder(text, () => setSpeaking(true), () => setSpeaking(false));
+    await playTTSReminder(text, () => setSpeaking(true), () => setSpeaking(false), elderId);
   }
 
   return (

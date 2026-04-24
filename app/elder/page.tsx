@@ -159,7 +159,7 @@ export default function ElderPage() {
       // Play a TTS confirmation
       try {
         const { playTTSReminder } = await import("@/lib/ttsReminder");
-        await playTTSReminder("Thanks for chatting! I've noted everything down. Take care!");
+        await playTTSReminder("Thanks for chatting! I've noted everything down. Take care!", undefined, undefined, ELDER_ID);
       } catch { /* TTS is best-effort */ }
       await fetchSummary();
     } catch (err) {

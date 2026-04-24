@@ -92,7 +92,7 @@ export default function MedicineTimeline({
         // Fire and forget — TTS is best-effort
         const text = buildReminderText(missedMedicines.map((m) => ({ name: m.name, dosage: m.dosage })));
         if (text) {
-          playTTSReminder(text).catch((err) => console.warn("TTS reminder failed:", err));
+          playTTSReminder(text, undefined, undefined, elderId).catch((err) => console.warn("TTS reminder failed:", err));
         }
       }
     }
